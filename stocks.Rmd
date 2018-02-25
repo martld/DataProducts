@@ -1,0 +1,49 @@
+---
+title: "Plotly Exercise"
+author: "Larry Martin"
+date: "February 23, 2018"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(quantmod)
+library(dplyr)
+library(plyr)
+library(tidyr)
+library(plotly)
+library(data.table)
+```
+
+## Apple Daily Stock Price and Volume
+
+```{r stocks1, echo = FALSE, warning=FALSE}
+sp <- suppressMessages(getSymbols(Symbols = c("AAPL","NKE","NFLX"), src='google', from = '2013-01-01'))
+AAPL <- as.data.frame(AAPL)
+AAPL <- setDT(AAPL, keep.rownames = TRUE)[]
+AAPL <- setnames(AAPL, 1, "date")
+AAPL <- arrange(AAPL, desc(date))
+AAPL <- rename(AAPL, c("date"="Market_Date", "AAPL.High"="High", "AAPL.Low"="Low", "AAPL.Open"="Opening_Price", "AAPL.Close"="Closing_Price", "AAPL.Volume"="Volume"))
+p3 <- plot_ly (AAPL, x = Market_Date, y = Closing_Price, type = 'scatter', mode = 'markers', size = Volume)
+p4 <- layout(p3, xaxis = list(title = "Market Date"),
+      yaxis = list(title = "Closing Price"))
+p4
+```
+
+## Top 50 Stocks by Market Cap
+
+```{r stocks2, echo = FALSE, warning=FALSE, message=FALSE}
+ss <- suppressMessages(stockSymbols(exchange=c("AMEX","NASDAQ","NYSE")))
+topMktCap <- ss[grepl("B", ss$MarketCap), ]
+topMktCap$MarketCap <- strsplit(topMktCap$MarketCap,"B")
+topMktCap$MarketCap = as.numeric(gsub("\\$", "", topMktCap$MarketCap))
+top50MktCap <- arrange(top_n(topMktCap, 50, MarketCap), desc(MarketCap))
+finalds <- select(top50MktCap, Symbol,Name,LastSale,MarketCap,Sector,Exchange)
+p1 <- plot_ly (finalds, x = MarketCap, y = Symbol, type = 'bar', mode = 'markers'
+         , orientation = 'h', color = Sector)
+p2 <- layout(p1, xaxis = list(title = "Market Cap in billions"),
+      yaxis = list(title = "Stock"))
+p2
+```
+
+
